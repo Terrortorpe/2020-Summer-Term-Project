@@ -22,6 +22,7 @@ int main()
         }
     }
 
+    /* this code just prints the netlist out, like a test
     for (const auto &a: data)
     {
         for (const auto &b: a)
@@ -30,6 +31,6 @@ int main()
         }
         cout<<'\n';
     }
-        
+     */   
 }
     
