@@ -11,7 +11,10 @@ using namespace std;
 typedef Eigen::MatrixXcd Matrix;
 typedef Eigen::VectorXcd Vector;
 complex<double> I = {0,1};
-map<string,node*> Pair;
+map<string,tyingnode*> PairT;
+map<string,componentnode*> PairC;
+int IDcount;
+double omega;
 
 
 
@@ -20,6 +23,15 @@ componentnode* A;
 tyingnode* B;
 double Current; //positive if going INTO the tyingnode
 int CurrentID;
+
+edge(componentnode* a_, tyingnode* b_){
+    A=a_;
+    B=b_;
+    CurrentID =  IDcount;
+    IDcount++;
+    A->edges.push_back(this);
+    B->edges.push_back(this);
+}
 };
 
 class node{
@@ -56,12 +68,12 @@ public:
 };
 
 class Capacitornode :public componentnode{
+    public:
     double Capacitance;
     complex<double> Impedance;
 
-    Capacitornode(double Capa,double omega){
-        Capacitance = Capa;
-        Impedance = 1.0/(I*Capacitance*omega);
+    Capacitornode(stringstream &ss){
+
     }
 
     void constraint(Matrix& mat, Vector& vec){
@@ -87,12 +99,12 @@ class Capacitornode :public componentnode{
 };
 
 class Inductornode :public componentnode{
+    public:
     double Inductance;
     complex<double> Impedance;
 
-    Inductornode(double Indu,double omega){
-        Inductance = Indu;
-        Impedance = I*Inductance*omega;
+    Inductornode(stringstream &ss){
+
     }
 
     void constraint(Matrix& mat, Vector& vec){
@@ -118,7 +130,12 @@ class Inductornode :public componentnode{
 };
 
 class resistornode :public componentnode{
+    public:
     double Resistance;
+    resistornode(stringstream &ss){
+        
+    };
+
     void constraint(Matrix& mat, Vector& vec){
 
         //Current flowing in and out has to sum to 0
@@ -143,7 +160,14 @@ class resistornode :public componentnode{
 
 
 class voltagesourcenode :public componentnode{
+    public:
     double Voltage;
+
+    voltagesourcenode(stringstream &ss){
+        
+    }
+
+
     void constraint(Matrix& mat, Vector& vec){
 
         //Current flowing in and out has to sum to 0
@@ -166,7 +190,12 @@ class voltagesourcenode :public componentnode{
 };
 
 class currentsourcenode :public componentnode{
+    public:
     double Current;
+
+    currentsourcenode(stringstream &ss){
+        
+    }
     void constraint(Matrix& mat, Vector& vec){
 
         //Current source makes current flow from the 0 to the 1
@@ -187,6 +216,7 @@ class currentsourcenode :public componentnode{
 // edge[1] is the Base 
 // edge[2] is the Emitter
 /*class transistornode :public componentnode{
+    public:
     float Beta;
     transistornode(float bet){
         Beta = bet;
@@ -210,12 +240,17 @@ class currentsourcenode :public componentnode{
 
 // Function for searching a tyingnode by name or creating it if it doenst exist yet
 
-node* Gettyingnode(string name){
-    node* res = Pair[name];
+tyingnode* Gettyingnode(string name){
+    tyingnode* res = PairT[name];
     if (res == nullptr){
-        Pair[name] = res = new tyingnode(); //fancy syntax for a new tyingnode named pair which is equal to the name of Pair
+        PairT[name] = res = new tyingnode(); //fancy syntax for a new tyingnode named pair which is equal to the name of Pair
     }
     return res;
+}
+
+double ReadValue(string s){
+// To Do
+// Gets the double value from the string
 }
 
 int main()
@@ -228,28 +263,33 @@ int main()
     while (getline(something,netlist_line))
     {
         string component, nodefrom, nodeto;
-        istringstream iss(netlist_line);
+        stringstream iss(netlist_line);
         iss >> component >> nodefrom >> nodeto;
-        node* tyingfrom = Gettyingnode(nodefrom);
-        node* tyingto = Gettyingnode(nodeto);
-        node* componentnodepointer;
+        tyingnode* tyingfrom = Gettyingnode(nodefrom);
+        tyingnode* tyingto = Gettyingnode(nodeto);
+        componentnode* componentnodepointer;
         switch(component[0]){
             case 'V':
-            componentnodepointer = new voltagesourcenode();
+            componentnodepointer = new voltagesourcenode(iss);
             break;
             case 'I':
-            componentnodepointer = new currentsourcenode();
+            componentnodepointer = new currentsourcenode(iss);
             break;
             case 'R':
-            componentnodepointer = new resistornode();
+            componentnodepointer = new resistornode(iss);
             break;
             case 'L':
-            componentnodepointer = new Inductornode(); // need constructor
+            componentnodepointer = new Inductornode(iss); // need constructor
             break;
             case 'C':
-            componentnodepointer = new Capacitornode(); // need constructor
+            componentnodepointer = new Capacitornode(iss); // need constructor
             break;
         }
+        new edge(componentnodepointer, tyingfrom);
+        new edge(componentnodepointer, tyingto);
+
+        PairC[component] = componentnodepointer;
+
     }
 
     //Solving the matrix of doom
@@ -276,3 +316,4 @@ Q1 N003 N001 0 NPN
 .tran 0 10ms 0 1us
 .end 
 */
+
